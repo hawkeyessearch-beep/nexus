@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEXUS AI | MULTIMEDIA TERMINAL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@300;400;700&display=swap');
+        body { font-family: 'Fira Code', monospace; background: #050505; color: #00ff41; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        .terminal-panel { width: 40%; border-right: 1px solid #1a1a1a; display: flex; flex-direction: column; background: #0a0a0a; }
+        .display-panel { width: 60%; background: #0d1117; color: #c9d1d9; font-family: 'Inter', sans-serif; overflow-y: auto; padding: 2rem; }
+        input { border: none; outline: none; background: transparent; color: #00ff41; width: 100%; font-family: inherit; }
+        .ai-box { background: rgba(0, 255, 65, 0.05); border-left: 3px solid #00ff41; padding: 12px; margin: 10px 0; color: #d1d1d1; font-size: 0.8rem; }
+        .info-card { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 1.2rem; margin-bottom: 1.5rem; transition: 0.3s; }
+        .info-card:hover { border-color: #58a6ff; transform: translateY(-2px); }
+        .image-grid { display: grid; grid-cols: 2; gap: 10px; margin-bottom: 15px; }
+        .img-item { width: 100%; height: 150px; object-fit: cover; border-radius: 8px; border: 1px solid #30363d; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 10px; }
+    </style>
+</head>
+<body>
+    <div class="terminal-panel">
+        <div class="bg-[#1a1a1a] p-3 text-[10px] flex justify-between border-b border-[#333]">
+            <span class="font-bold">NEXUS MULTIMEDIA OS v5.0</span>
+            <span id="clock">00:00:00</span>
+        </div>
+        <div id="terminal-screen" class="flex-grow p-4 overflow-y-auto">
+            <div class="text-emerald-500 opacity-80 mb-4">
+                <pre style="font-size: 6px;">
+    _   _ _______齿 _   _ ____  
+   / \ |_   _| | | | / ___| 
+  / _ \  | | | | | | \___ \ 
+ / ___ \ | | | |_| |  ___) |
+/_/   \_\_|  \___/  |____/ </pre>
+                <p class="text-[10px] mt-2 tracking-widest">>> IMAGE SEARCH MODULE LOADED...</p>
+            </div>
+            <div id="history"></div>
+            <div class="flex mt-2 pb-20">
+                <span class="text-blue-400 font-bold mr-2">➜</span>
+                <input type="text" id="userInput" autofocus spellcheck="false" autocomplete="off">
+            </div>
+        </div>
+    </div>
+
+    <div id="display-panel" class="display-panel">
+        <div class="h-full flex flex-col items-center justify-center opacity-10">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <h2 class="text-2xl font-bold italic uppercase">Visual Intelligence Node</h2>
+        </div>
+    </div>
+
+    <script>
+        const GEMINI_API_KEY = "AIzaSyB9iSUbwCNp-Zwfpske26Z7brwtgX68ZIQ";
+        const input = document.getElementById('userInput');
+        const history = document.getElementById('history');
+        const terminalScreen = document.getElementById('terminal-screen');
+        const displayPanel = document.getElementById('display-panel');
+
+        setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString(); }, 1000);
+
+        input.addEventListener('keydown', async (e) => {
+            if (e.key === 'Enter') {
+                const fullCmd = input.value.trim();
+                if (!fullCmd) return;
+                input.value = '';
+                history.innerHTML += `<div class="mt-4"><span class="text-blue-400 font-bold">➜</span> <span class="text-white">${fullCmd}</span></div>`;
+                
+                const [cmd, ...args] = fullCmd.split(' ');
+                const query = args.join(' ');
+
+                if (cmd.toLowerCase() === 'search' && query) {
+                    performDeepSearch(query);
+                } else if (cmd.toLowerCase() === 'clear') {
+                    history.innerHTML = '';
+                    displayPanel.innerHTML = '';
+                }
+                terminalScreen.scrollTop = terminalScreen.scrollHeight;
+            }
+        });
+
+        async function performDeepSearch(query) {
+            const loadId = "l-" + Date.now();
+            history.innerHTML += `<div id="${loadId}" class="text-yellow-500 animate-pulse mt-2">>> Fetching Multimedia Packets for: ${query}...</div>`;
+
+            try {
+                // 1. AI Summary
+                const aiPromise = fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: `Summarize "${query}" in 3 terminal-style bullets.` }] }] })
+                });
+
+                // 2. Wikipedia Data with Images
+                const wikiPromise = fetch(`https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&prop=extracts|pageimages&generator=search&exsentences=2&exintro=1&explaintext=1&piprop=thumbnail&pithumbsize=400&gsrsearch=${encodeURIComponent(query)}&gsrlimit=6`);
+
+                const [aiRes, wikiRes] = await Promise.all([aiPromise, wikiPromise]);
+                const aiData = await aiRes.json();
+                const wikiData = await wikiRes.json();
+
+                document.getElementById(loadId).remove();
+
+                // AI Response to Terminal
+                if (aiData.candidates) {
+                    const text = aiData.candidates[0].content.parts[0].text;
+                    history.innerHTML += `<div class="ai-box"><span class="text-emerald-400 font-bold">[AI ANALYSIS]</span><br>${text.replace(/\n/g, '<br>')}</div>`;
+                }
+
+                // Visual Results to Right Pane
+                displayPanel.innerHTML = `<h2 class="text-3xl font-black mb-8 text-white uppercase border-b border-gray-800 pb-4 tracking-tighter">${query}</h2>`;
+                
+                if (wikiData.query && wikiData.query.pages) {
+                    const pages = Object.values(wikiData.query.pages);
+                    
+                    // Image Gallery at the top
+                    let imgHtml = '<div class="grid grid-cols-2 gap-3 mb-8">';
+                    pages.forEach(p => {
+                        if (p.thumbnail) {
+                            imgHtml += `<img src="${p.thumbnail.source}" class="img-item hover:opacity-80 cursor-pointer" onclick="window.open('${p.thumbnail.source}')">`;
+                        }
+                    });
+                    imgHtml += '</div>';
+                    displayPanel.innerHTML += imgHtml;
+
+                    // Info Cards
+                    pages.forEach(p => {
+                        displayPanel.innerHTML += `
+                            <div class="info-card">
+                                <h3 class="text-blue-400 font-bold text-lg mb-2">${p.title}</h3>
+                                <p class="text-gray-400 text-xs leading-relaxed">${p.extract || 'No description available.'}</p>
+                                <a href="https://en.wikipedia.org/?curid=${p.pageid}" target="_blank" class="text-[9px] text-emerald-500 underline mt-4 inline-block uppercase font-bold">Open Full Intel</a>
+                            </div>`;
+                    });
+                } else {
+                    displayPanel.innerHTML += `<p class="opacity-50 italic">No visual data found for this entry.</p>`;
+                }
+
+            } catch (err) {
+                if(document.getElementById(loadId)) document.getElementById(loadId).remove();
+                history.innerHTML += `<div class="text-red-500 mt-2 italic font-bold">! UPLINK FAILURE</div>`;
+            }
+            terminalScreen.scrollTop = terminalScreen.scrollHeight;
+        }
+        document.addEventListener('click', () => input.focus());
+    </script>
+</body>
+</html>
